@@ -28,11 +28,9 @@ main = do
 inspect :: CTranslUnit -> IO ()
 inspect ast = do
   let needed_types = getNeededTypes ast
-  let Right (x,_) = runTrav () $ do
-                      a <- analyseAST ast
-                      return (gTags a, gTypeDefs a)
+  let tms = typeMaps ast
 
-  mapM_ print $ catMaybes $ map (dependOnHrds x) needed_types
+  mapM_ print $ catMaybes $ map (dependOnHrds tms) needed_types
 
 dependOnHrds :: (Map SUERef TagDef, Map Ident TypeDef) -> CTypeSpecifier NodeInfo -> Maybe NodeInfo
 dependOnHrds (_, gtds) (CTypeDef n _) = let (TypeDef _ _ _ i) = gtds ! n

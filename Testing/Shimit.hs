@@ -1,11 +1,24 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Testing.Shimit where
 
-import Language.C
 import Data.Generics.Schemes
+import Data.Map (Map)
+import Language.C
+import Language.C.Analysis
 
 getNeededTypes :: CTranslUnit -> [CTypeSpecifier NodeInfo]
 getNeededTypes ast = concatMap relevantTypes $ topLevelFunDefs ast
+
+-- getRequiredFiles :: CTranslUnit -> [String]
+-- getRequiredFiles ast = 
+--   where
+--     needed_types = getNeededTypes ast
+--     (tags,typedefs) = typeMaps ast
+
+typeMaps :: CTranslUnit -> (Map SUERef TagDef, Map Ident TypeDef)
+typeMaps ast = case runTrav () (analyseAST ast >>= (\a -> return (gTags a, gTypeDefs a))) of
+                 Left err -> error $ "ERROR: " ++ show err
+                 Right (maps,_) -> maps
 
 topLevelFunDefs :: CTranslUnit -> [CFunctionDef NodeInfo]
 topLevelFunDefs ctu = (listify isCFunDef) ctu
