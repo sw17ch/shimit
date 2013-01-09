@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, StandaloneDeriving #-}
+{-# LANGUAGE DeriveDataTypeable, StandaloneDeriving, ViewPatterns #-}
 module Main where
 
 import Testing.Shimit
@@ -33,14 +33,13 @@ inspect ast = do
   mapM_ print $ catMaybes $ map (dependOnHrds tms) needed_types
 
 dependOnHrds :: (Map SUERef TagDef, Map Ident TypeDef) -> CTypeSpecifier NodeInfo -> Maybe NodeInfo
-dependOnHrds (_, gtds) (CTypeDef n _) = let (TypeDef _ _ _ i) = gtds ! n
-                                        in Just i
-dependOnHrds (gts, _) (CSUType (CStruct _ (Just i) _ _ _) _) = let ref = NamedRef i
-                                                               in case gts ! ref of
-                                                                    (CompDef (CompType _ _ _ _ i')) -> Just i'
-                                                                    (EnumDef (EnumType _ _ _ i')) -> Just i'
-dependOnHrds (gts, _) (CEnumType (CEnum (Just i) _ _ _) _) = let ref = NamedRef i
-                                                             in case gts ! ref of
-                                                                  (CompDef (CompType _ _ _ _ i')) -> Just i'
-                                                                  (EnumDef (EnumType _ _ _ i')) -> Just i'
+dependOnHrds (_, gtds) (CTypeDef n _) = let (TypeDef _ _ _ i) = gtds ! n in Just i
+dependOnHrds (gts, _) (CSUType (CStruct _ (Just i) _ _ _) _) = Just $ lookupInfoByIdent gts i
+dependOnHrds (gts, _) (CEnumType (CEnum (Just i) _ _ _) _) = Just $ lookupInfoByIdent gts i
 dependOnHrds _ _ = Nothing
+
+lookupInfoByIdent :: Map SUERef TagDef -> Ident -> NodeInfo
+lookupInfoByIdent gts i = let ref = NamedRef i
+                          in case gts ! ref of
+                               CompDef (CompType _ _ _ _ i') -> i'
+                               EnumDef (EnumType _ _ _ i') -> i'
